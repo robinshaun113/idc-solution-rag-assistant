@@ -1,0 +1,35 @@
+# ===== 密钥 / 环境变量（最重要，绝不能上传）=====
+.env
+.env.*
+!.env.example
+
+# ===== Python 虚拟环境 =====
+.venv/
+venv/
+env/
+
+# ===== Python 缓存 =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ===== 向量库 / 数据产物（体积大，可重建，不入库）=====
+chroma_db/
+*.sqlite3
+*.faiss
+
+# ===== 日志 =====
+logs/
+*.log
+
+# ===== 实验中间产物（图和 csv 视情况，先忽略大文件）=====
+experiments/figs/*.png
+
+# ===== 操作系统 / 编辑器 =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
