@@ -1,30 +1,30 @@
-{"id": 1, "type": "fact", "question": "市电中断后，UPS电池的后备时间一般是多久？", "expected_source": "供电系统运维SOP.txt", "reference": "电池后备时间一般为15分钟，必须在耗尽前完成柴发接管", "answerable": true}
-{"id": 2, "type": "fact", "question": "单节电池电压低于多少视作失效？", "expected_source": "供电系统运维SOP.txt", "reference": "单节电池电压低于10.5V视为失效", "answerable": true}
-{"id": 3, "type": "fact", "question": "网络可用性SLA目标是多少？", "expected_source": "网络故障排查SOP.txt", "reference": "99.99%，年中断时间不超过53分钟", "answerable": true}
-{"id": 4, "type": "fact", "question": "如果发生全机房网络中断，需要在几分钟内电话上报？", "expected_source": "网络故障排查SOP.txt", "reference": "5分钟内电话上报", "answerable": true}
-{"id": 5, "type": "fact", "question": "主机房推荐温度范围是什么？", "expected_source": "温控告警处置SOP.txt", "reference": "18℃~27℃，相对湿度35%~75%", "answerable": true}
-{"id": 6, "type": "process", "question": "收到市电中断告警后，应该按什么流程处置？", "expected_source": "供电系统运维SOP.txt", "reference": "1.确认UPS是否正常带载、看电池剩余时间 2.确认柴发是否自动启动切换，未启动则手动启动 3.检查ATS切换状态 4.通知供电局 5.持续监控UPS电量，15分钟内完成柴发接管", "answerable": true}
-{"id": 7, "type": "process", "question": "机房温度过高时的处置流程是怎样的？", "expected_source": "温控告警处置SOP.txt", "reference": "1.2分钟内登录DCIM确认告警真实性、排除误报 2.检查精密空调运行状态 3.空调停机则重启，失败则启用备用空调并通知厂商 4.检查冷通道封闭与送风口 5.超一级阈值则对非核心设备降载关机、优先保障核心网络与存储 6.工单记录处置动作", "answerable": true}
-{"id": 8, "type": "process", "question": "网络中断时应如何排查？", "expected_source": "网络故障排查SOP.txt", "reference": "1.确认故障范围（机柜/列/模块/全机房）2.网管系统看告警拓扑定位 3.查物理层（光纤光模块端口light）4.查链路层（up/down、风暴抑制、生成树）5.单设备切备机、链路切备用链路 6.对外链路中断联系运营商", "answerable": true}
-{"id": 9, "type": "process", "question": "UPS转旁路告警应该怎么处置？", "expected_source": "供电系统运维SOP.txt", "reference": "检查负载是否过载，确认输入电压是否异常", "answerable": true}
-{"id": 10, "type": "process", "question": "端口频繁up/down时按什么顺序排查？", "expected_source": "网络故障排查SOP.txt", "reference": "优先排查光模块和光纤，其次排查对端配置", "answerable": true}
-{"id": 11, "type": "process", "question": "某台精密空调停机了应该怎么处理？", "expected_source": "温控告警处置SOP.txt", "reference": "立即手动重启；重启失败则启用备用空调，并通知厂商", "answerable": true}
-{"id": 12, "type": "process", "question": "发现网络环路应如何处置？", "expected_source": "网络故障排查SOP.txt", "reference": "检查生成树配置，定位违规接线", "answerable": true}
-{"id": 13, "type": "process", "question": "对外链路中断时应该怎么做？", "expected_source": "网络故障排查SOP.txt", "reference": "联系运营商，确认是否为运营商侧故障；BGP会自动收敛至其他出口，确认流量已切换", "answerable": true}
-{"id": 14, "type": "process", "question": "收到温控告警后，第一步要做什么来排除误报？", "expected_source": "温控告警处置SOP.txt", "reference": "2分钟内登录DCIM系统确认告警真实性，排除传感器误报", "answerable": true}
-{"id": 15, "type": "process", "question": "市电中断且电池即将耗尽，柴发还没接管，应如何上报？", "expected_source": "供电系统运维SOP.txt", "reference": "属于P0级事件，立即电话上报值班经理和电力主管", "answerable": true}
-{"id": 16, "type": "judge", "question": "机房局部出现42℃热点，属于几级温控告警？", "expected_source": "温控告警处置SOP.txt", "reference": "一级（紧急），因为局部热点>40℃", "answerable": true}
-{"id": 17, "type": "judge", "question": "机房平均温度28℃且已持续20分钟，属于几级告警？", "expected_source": "温控告警处置SOP.txt", "reference": "二级（重要），平均温度27~30℃持续15分钟以上", "answerable": true}
-{"id": 18, "type": "judge", "question": "市电中断后柴油发电机未能成功接管，这属于什么级别的事件？", "expected_source": "供电系统运维SOP.txt", "reference": "P0级事件", "answerable": true}
-{"id": 19, "type": "judge", "question": "单条链路故障但流量已自动切换，属于几级事件？", "expected_source": "网络故障排查SOP.txt", "reference": "P2级", "answerable": true}
-{"id": 20, "type": "judge", "question": "单台精密空调故障，但冗余空调正常运行、温度没超标，属于几级告警？", "expected_source": "温控告警处置SOP.txt", "reference": "三级（一般）", "answerable": true}
-{"id": 21, "type": "judge", "question": "核心链路利用率达到88%，会触发什么颜色的告警？", "expected_source": "网络故障排查SOP.txt", "reference": "红色（阈值85%）", "answerable": true}
-{"id": 22, "type": "judge", "question": "核心链路利用率为75%，处于什么告警状态？", "expected_source": "网络故障排查SOP.txt", "reference": "黄色（阈值70%，红色为85%）", "answerable": true}
-{"id": 23, "type": "judge", "question": "机房温度持续上升超过一级阈值需要降载时，应优先保障哪类设备？", "expected_source": "温控告警处置SOP.txt", "reference": "优先保障核心网络与存储设备，对非核心设备降载或关机", "answerable": true}
-{"id": 24, "type": "judge", "question": "测得某节电池电压为10.2V，这节电池状态如何？", "expected_source": "供电系统运维SOP.txt", "reference": "已失效（低于10.5V视为失效），应安排更换", "answerable": true}
-{"id": 25, "type": "judge", "question": "高密度机柜的供电容量通常按多少设计，是否高于普通机柜？", "expected_source": "供电系统运维SOP.txt", "reference": "高密机柜8~12kW，高于普通机柜的4~6kW", "answerable": true}
-{"id": 26, "type": "unanswerable", "question": "数据中心的消防喷淋系统应该多久检查一次？", "expected_source": "", "reference": "知识库未覆盖消防内容，应触发拒答", "answerable": false}
-{"id": 27, "type": "unanswerable", "question": "机房门禁系统的密码应该如何设置？", "expected_source": "", "reference": "知识库未覆盖安防/门禁内容，应触发拒答", "answerable": false}
-{"id": 28, "type": "unanswerable", "question": "服务器操作系统应该选Linux还是Windows？", "expected_source": "", "reference": "知识库未覆盖此内容，应触发拒答", "answerable": false}
-{"id": 29, "type": "unanswerable", "question": "今天北京的天气怎么样？", "expected_source": "", "reference": "与知识库完全无关，应触发拒答", "answerable": false}
-{"id": 30, "type": "unanswerable", "question": "数据中心运维人员的年假有多少天？", "expected_source": "", "reference": "知识库未覆盖HR内容，应触发拒答", "answerable": false}
+{"id": 1, "type": "fact", "question": "GB 50174标准中，冷通道或机柜进风区域的温度应控制在什么范围？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "18℃~27℃", "answerable": true}
+{"id": 2, "type": "fact", "question": "根据GB 50174，新建数据中心主机房的净高不宜小于多少米？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "不宜小于3.0m", "answerable": true}
+{"id": 3, "type": "fact", "question": "GB/T 2887规定计算机机房的最小使用面积不宜小于多少平方米？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "不宜小于20m²", "answerable": true}
+{"id": 4, "type": "fact", "question": "GB/T 2887中，计算机机房正常照明的照度不应低于多少勒克斯（lx）？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "不应低于300lx", "answerable": true}
+{"id": 5, "type": "fact", "question": "GB 50174要求主机房与室外的静压差不宜小于多少帕（Pa）？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "与室外静压差不宜小于10Pa（与其他房间/走廊压差不宜小于5Pa）", "answerable": true}
+{"id": 6, "type": "process", "question": "GB 50174将数据中心划分为哪几个等级，各自的配置原则是什么？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "A、B、C三级；A级按容错系统配置、B级按冗余配置、C级按基本需求配置", "answerable": true}
+{"id": 7, "type": "process", "question": "GB 50174中A级数据中心对供电电源和后备柴油发电机有什么要求？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "应由双重电源供电并设备用电源；后备柴油发电机组性能等级不应低于G3级", "answerable": true}
+{"id": 8, "type": "process", "question": "根据GB 50174，单台机柜发热量大于4kW的主机房宜采用哪些制冷方式？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "宜采用活动地板下送风、行间制冷前送风等方式，并宜采取冷热通道隔离措施", "answerable": true}
+{"id": 9, "type": "process", "question": "GB/T 2887对计算机机房的供电电源电压、频率和接地方式有什么规定？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "电压380V/220V、频率50Hz、配电宜采用TN-S接地方式", "answerable": true}
+{"id": 10, "type": "process", "question": "GB/T 2887中，什么情况下场地应安装自动灭火系统？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "所在建筑已采用自动灭火系统，或场地面积≥140m²时应安装自动灭火系统", "answerable": true}
+{"id": 11, "type": "process", "question": "GB 50174对数据中心的耐火等级和防火隔墙有什么要求？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "耐火等级不应低于二级；与其他功能用房同建时采用耐火极限不低于2.0h的防火隔墙，隔墙开门采用甲级防火门", "answerable": true}
+{"id": 12, "type": "process", "question": "中国移动白皮书中，智算网络的Scale-Out和Scale-Up分别指什么？", "expected_source": "中国移动数据中心白皮书.pdf", "reference": "Scale-Out指GPU服务器/超节点之间互联，Scale-Up指服务器或超节点内部GPU间互联", "answerable": true}
+{"id": 13, "type": "process", "question": "华为白皮书将数据中心自动化运行分为哪几个等级？", "expected_source": "华为数据中心白皮书.pdf", "reference": "L1~L5五个等级，从L1运行辅助到L5完全运行自动化", "answerable": true}
+{"id": 14, "type": "process", "question": "GB/T 2887中停机时机房的温度和相对湿度要求是什么？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "停机时温度5~40℃，相对湿度20%~80%", "answerable": true}
+{"id": 15, "type": "process", "question": "GB 50174中主机房内搬运设备通道和机柜间距有哪些净宽要求？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "搬运设备通道净宽不应小于1.5m，面对面机柜正面间距不宜小于1.2m，背对背机柜背面间距不宜小于0.8m", "answerable": true}
+{"id": 16, "type": "judge", "question": "某计算机机房运行中断会对国家安全造成严重损害，按GB/T 2887应划为哪一级？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "A级（对国家安全/社会秩序/公共利益造成严重损害）", "answerable": true}
+{"id": 17, "type": "judge", "question": "按GB/T 2887，A级计算机机房楼板荷重要求是多少，是否高于C级？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "A级10kN/m²，高于C级6kN/m²（B级8kN/m²）", "answerable": true}
+{"id": 18, "type": "judge", "question": "GB/T 2887中节能机房的能效比应满足什么要求？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "节能机房能效比应不大于1.8（机房能效比一般应不大于2.4）", "answerable": true}
+{"id": 19, "type": "judge", "question": "按GB/T 2887，开机时A级机房夏季温度要求是多少？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "夏季24±1℃（冬季20±1℃）", "answerable": true}
+{"id": 20, "type": "judge", "question": "华为白皮书指出数据中心宕机事故中人为操作事故占比约为多少？", "expected_source": "华为数据中心白皮书.pdf", "reference": "人为操作事故占比超60%", "answerable": true}
+{"id": 21, "type": "judge", "question": "中国移动白皮书提到，RDMA网络在1%丢包时通信吞吐性能会如何变化？", "expected_source": "中国移动数据中心白皮书.pdf", "reference": "仅1%丢包就会导致通信吞吐性能下降一半以上，因此需无损传输", "answerable": true}
+{"id": 22, "type": "judge", "question": "华为白皮书对比铅蓄电池和锂离子电池的寿命，二者分别是多少？", "expected_source": "华为数据中心白皮书.pdf", "reference": "铅蓄电池寿命通常3~6年，锂离子电池10~15年（且占地仅为铅电三分之一）", "answerable": true}
+{"id": 23, "type": "judge", "question": "华为白皮书提到中国要求2025年新建大型数据中心的PUE低于多少？", "expected_source": "华为数据中心白皮书.pdf", "reference": "中国要求2025年新建大型数据中心PUE低于1.3", "answerable": true}
+{"id": 24, "type": "judge", "question": "按GB 50174，新建A级数据中心首层完成面应高出当地百年重现期洪水位线多少？", "expected_source": "GB 50174数据中心设计规范.pdf", "reference": "应高出当地百年重现期洪水位线1.0m以上，并高出室外地坪0.6m以上", "answerable": true}
+{"id": 25, "type": "judge", "question": "GB/T 2887中C级机房开机温度范围与A级相比是更宽还是更窄？具体是多少？", "expected_source": "GBT2887计算机场地通用规范.pdf", "reference": "C级更宽，为15~28℃；A级为夏季24±1℃/冬季20±1℃", "answerable": true}
+{"id": 26, "type": "unanswerable", "question": "数据中心运维人员每年的带薪年假有多少天？", "expected_source": "", "reference": "知识库未覆盖HR内容，应触发拒答", "answerable": false}
+{"id": 27, "type": "unanswerable", "question": "机房门禁系统的管理员登录密码应该设置成什么？", "expected_source": "", "reference": "知识库未覆盖具体密码/安防配置，应触发拒答", "answerable": false}
+{"id": 28, "type": "unanswerable", "question": "购买一台戴尔R750服务器现在的市场报价是多少钱？", "expected_source": "", "reference": "知识库未覆盖采购报价，应触发拒答", "answerable": false}
+{"id": 29, "type": "unanswerable", "question": "今天北京的天气怎么样，适合去机房巡检吗？", "expected_source": "", "reference": "与知识库完全无关，应触发拒答", "answerable": false}
+{"id": 30, "type": "unanswerable", "question": "数据中心食堂今天午餐供应什么菜？", "expected_source": "", "reference": "与知识库完全无关，应触发拒答", "answerable": false}
