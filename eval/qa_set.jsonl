@@ -1,0 +1,30 @@
+{"id": 1, "type": "fact", "question": "市电中断后，UPS电池的后备时间一般是多久？", "expected_source": "供电系统运维SOP.txt", "reference": "电池后备时间一般为15分钟，必须在耗尽前完成柴发接管", "answerable": true}
+{"id": 2, "type": "fact", "question": "单节电池电压低于多少视作失效？", "expected_source": "供电系统运维SOP.txt", "reference": "单节电池电压低于10.5V视为失效", "answerable": true}
+{"id": 3, "type": "fact", "question": "网络可用性SLA目标是多少？", "expected_source": "网络故障排查SOP.txt", "reference": "99.99%，年中断时间不超过53分钟", "answerable": true}
+{"id": 4, "type": "fact", "question": "如果发生全机房网络中断，需要在几分钟内电话上报？", "expected_source": "网络故障排查SOP.txt", "reference": "5分钟内电话上报", "answerable": true}
+{"id": 5, "type": "fact", "question": "主机房推荐温度范围是什么？", "expected_source": "温控告警处置SOP.txt", "reference": "18℃~27℃，相对湿度35%~75%", "answerable": true}
+{"id": 6, "type": "process", "question": "收到市电中断告警后，应该按什么流程处置？", "expected_source": "供电系统运维SOP.txt", "reference": "1.确认UPS是否正常带载、看电池剩余时间 2.确认柴发是否自动启动切换，未启动则手动启动 3.检查ATS切换状态 4.通知供电局 5.持续监控UPS电量，15分钟内完成柴发接管", "answerable": true}
+{"id": 7, "type": "process", "question": "机房温度过高时的处置流程是怎样的？", "expected_source": "温控告警处置SOP.txt", "reference": "1.2分钟内登录DCIM确认告警真实性、排除误报 2.检查精密空调运行状态 3.空调停机则重启，失败则启用备用空调并通知厂商 4.检查冷通道封闭与送风口 5.超一级阈值则对非核心设备降载关机、优先保障核心网络与存储 6.工单记录处置动作", "answerable": true}
+{"id": 8, "type": "process", "question": "网络中断时应如何排查？", "expected_source": "网络故障排查SOP.txt", "reference": "1.确认故障范围（机柜/列/模块/全机房）2.网管系统看告警拓扑定位 3.查物理层（光纤光模块端口light）4.查链路层（up/down、风暴抑制、生成树）5.单设备切备机、链路切备用链路 6.对外链路中断联系运营商", "answerable": true}
+{"id": 9, "type": "process", "question": "UPS转旁路告警应该怎么处置？", "expected_source": "供电系统运维SOP.txt", "reference": "检查负载是否过载，确认输入电压是否异常", "answerable": true}
+{"id": 10, "type": "process", "question": "端口频繁up/down时按什么顺序排查？", "expected_source": "网络故障排查SOP.txt", "reference": "优先排查光模块和光纤，其次排查对端配置", "answerable": true}
+{"id": 11, "type": "process", "question": "某台精密空调停机了应该怎么处理？", "expected_source": "温控告警处置SOP.txt", "reference": "立即手动重启；重启失败则启用备用空调，并通知厂商", "answerable": true}
+{"id": 12, "type": "process", "question": "发现网络环路应如何处置？", "expected_source": "网络故障排查SOP.txt", "reference": "检查生成树配置，定位违规接线", "answerable": true}
+{"id": 13, "type": "process", "question": "对外链路中断时应该怎么做？", "expected_source": "网络故障排查SOP.txt", "reference": "联系运营商，确认是否为运营商侧故障；BGP会自动收敛至其他出口，确认流量已切换", "answerable": true}
+{"id": 14, "type": "process", "question": "收到温控告警后，第一步要做什么来排除误报？", "expected_source": "温控告警处置SOP.txt", "reference": "2分钟内登录DCIM系统确认告警真实性，排除传感器误报", "answerable": true}
+{"id": 15, "type": "process", "question": "市电中断且电池即将耗尽，柴发还没接管，应如何上报？", "expected_source": "供电系统运维SOP.txt", "reference": "属于P0级事件，立即电话上报值班经理和电力主管", "answerable": true}
+{"id": 16, "type": "judge", "question": "机房局部出现42℃热点，属于几级温控告警？", "expected_source": "温控告警处置SOP.txt", "reference": "一级（紧急），因为局部热点>40℃", "answerable": true}
+{"id": 17, "type": "judge", "question": "机房平均温度28℃且已持续20分钟，属于几级告警？", "expected_source": "温控告警处置SOP.txt", "reference": "二级（重要），平均温度27~30℃持续15分钟以上", "answerable": true}
+{"id": 18, "type": "judge", "question": "市电中断后柴油发电机未能成功接管，这属于什么级别的事件？", "expected_source": "供电系统运维SOP.txt", "reference": "P0级事件", "answerable": true}
+{"id": 19, "type": "judge", "question": "单条链路故障但流量已自动切换，属于几级事件？", "expected_source": "网络故障排查SOP.txt", "reference": "P2级", "answerable": true}
+{"id": 20, "type": "judge", "question": "单台精密空调故障，但冗余空调正常运行、温度没超标，属于几级告警？", "expected_source": "温控告警处置SOP.txt", "reference": "三级（一般）", "answerable": true}
+{"id": 21, "type": "judge", "question": "核心链路利用率达到88%，会触发什么颜色的告警？", "expected_source": "网络故障排查SOP.txt", "reference": "红色（阈值85%）", "answerable": true}
+{"id": 22, "type": "judge", "question": "核心链路利用率为75%，处于什么告警状态？", "expected_source": "网络故障排查SOP.txt", "reference": "黄色（阈值70%，红色为85%）", "answerable": true}
+{"id": 23, "type": "judge", "question": "机房温度持续上升超过一级阈值需要降载时，应优先保障哪类设备？", "expected_source": "温控告警处置SOP.txt", "reference": "优先保障核心网络与存储设备，对非核心设备降载或关机", "answerable": true}
+{"id": 24, "type": "judge", "question": "测得某节电池电压为10.2V，这节电池状态如何？", "expected_source": "供电系统运维SOP.txt", "reference": "已失效（低于10.5V视为失效），应安排更换", "answerable": true}
+{"id": 25, "type": "judge", "question": "高密度机柜的供电容量通常按多少设计，是否高于普通机柜？", "expected_source": "供电系统运维SOP.txt", "reference": "高密机柜8~12kW，高于普通机柜的4~6kW", "answerable": true}
+{"id": 26, "type": "unanswerable", "question": "数据中心的消防喷淋系统应该多久检查一次？", "expected_source": "", "reference": "知识库未覆盖消防内容，应触发拒答", "answerable": false}
+{"id": 27, "type": "unanswerable", "question": "机房门禁系统的密码应该如何设置？", "expected_source": "", "reference": "知识库未覆盖安防/门禁内容，应触发拒答", "answerable": false}
+{"id": 28, "type": "unanswerable", "question": "服务器操作系统应该选Linux还是Windows？", "expected_source": "", "reference": "知识库未覆盖此内容，应触发拒答", "answerable": false}
+{"id": 29, "type": "unanswerable", "question": "今天北京的天气怎么样？", "expected_source": "", "reference": "与知识库完全无关，应触发拒答", "answerable": false}
+{"id": 30, "type": "unanswerable", "question": "数据中心运维人员的年假有多少天？", "expected_source": "", "reference": "知识库未覆盖HR内容，应触发拒答", "answerable": false}
