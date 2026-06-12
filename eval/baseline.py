@@ -20,6 +20,7 @@ from rag_chain import answer_question  # noqa: E402
 
 QA_PATH = ROOT / "eval" / "qa_set.jsonl"
 REPORT_PATH = ROOT / "eval" / "baseline_report.md"
+ANSWERS_PATH = ROOT / "eval" / "answers_full.md"
 
 # 判定"拒答"的关键词：答案里出现任一即视为成功拒答
 REFUSAL_KEYWORDS = ["未覆盖", "不知道", "无法回答", "暂未", "建议咨询"]
@@ -56,25 +57,34 @@ def is_refusal(answer: str) -> bool:
 # 返回一个 dict，建议字段：{"hit": 0/1 或 None, "refused": True/False 或 None, "answer": 生成的答案文本}
 # （可回答题的 refused 填 None，无答案题的 hit 填 None）
 # ============================================================
-def evaluate_one(item: dict) -> dict:
+def evaluate_one(item: dict, with_answers: bool = False) -> dict:
     if item["answerable"]:
         docs = retrieve(item["question"])
         sources = [d.metadata["source"] for d in docs]
         hit = 1 if item["expected_source"] in sources else 0
-        return {"hit": hit, "refused": None, "answer": None}
+        # ----------------------------------------------------------
+        # with_answers=True 时本题也生成答案（供人工打分对比 reference）；
+        # False 时保持 None，日常回归只跑检索，省钱省时。
+        # ----------------------------------------------------------
+        answer = answer_question(item["question"]).answer if with_answers else None
+        return {"hit": hit, "refused": None, "answer": answer}
     else:
         result = answer_question(item["question"])
         refused = is_refusal(result.answer)
         return {"hit": None, "refused": refused, "answer": result.answer}
 
 
-def main() -> None:
+def main(with_answers: bool = False) -> None:
     qa = load_qa(QA_PATH)
-    print(f"加载评估集：共 {len(qa)} 题\n")
+    print(f"加载评估集：共 {len(qa)} 题")
+    if with_answers:
+        print("（--with-answers 已开启：可回答题将额外生成答案，较慢且消耗 API）\n")
+    else:
+        print("（仅检索模式：如需人工打分用的答案文本，请加 --with-answers）\n")
 
     results = []
     for item in qa:
-        r = evaluate_one(item)
+        r = evaluate_one(item, with_answers=with_answers)
         results.append({**item, **r})
         # 简易进度打印
         tag = f"hit={r.get('hit')}" if item["answerable"] else f"refused={r.get('refused')}"
@@ -94,6 +104,31 @@ def main() -> None:
 
     write_report(results, hit_rate, refusal_rate)
     print(f"\n报告已写入 {REPORT_PATH}")
+    if with_answers:
+        write_answers_full(results)
+        print(f"完整答案明细已写入 {ANSWERS_PATH}")
+
+
+def write_answers_full(results: list[dict]) -> None:
+    """把每题的 reference 与完整生成答案并排导出，供人工逐题打分（不截断）。"""
+    lines = ["# Baseline 完整答案明细（打分用）", ""]
+    for r in results:
+        if not r["answerable"]:
+            continue
+        lines += [
+            f"## id {r['id']}　[{r['type']}]　hit={r.get('hit')}",
+            f"**问题**：{r['question']}",
+            "",
+            f"**标准答案(reference)**：{r.get('reference', '')}",
+            "",
+            "**生成答案**：",
+            "",
+            (r.get("answer") or "(无)").strip(),
+            "",
+            "---",
+            "",
+        ]
+    ANSWERS_PATH.write_text("\n".join(lines), encoding="utf-8")
 
 
 def write_report(results: list[dict], hit_rate: float, refusal_rate: float) -> None:
@@ -105,18 +140,19 @@ def write_report(results: list[dict], hit_rate: float, refusal_rate: float) -> N
         f"- 拒答率（无答案题）: **{refusal_rate:.1%}**",
         "- 人工分：请在下表 `人工1-5` 列手动填写（5=准确完整有出处，1=错误或答非所问）",
         "",
-        "| id | 类型 | 问题 | hit | 拒答 | 人工1-5 | 生成答案（节选） |",
-        "|---|---|---|---|---|---|---|",
+        "| id | 类型 | 问题 | hit | 拒答 | 标准答案(reference) | 人工1-5 | 生成答案（节选） |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r in results:
-        ans = (r.get("answer") or "").replace("\n", " ")[:50]
+        ans = (r.get("answer") or "").replace("\n", " ")[:60]
+        ref_ans = (r.get("reference") or "").replace("\n", " ")
         hit = "" if r.get("hit") is None else r["hit"]
         ref = "" if r.get("refused") is None else ("是" if r["refused"] else "否")
         lines.append(
-            f"| {r['id']} | {r['type']} | {r['question'][:20]} | {hit} | {ref} |  | {ans} |"
+            f"| {r['id']} | {r['type']} | {r['question'][:20]} | {hit} | {ref} | {ref_ans} |  | {ans} |"
         )
     REPORT_PATH.write_text("\n".join(lines), encoding="utf-8")
 
 
 if __name__ == "__main__":
-    main()
+    main(with_answers="--with-answers" in sys.argv)
