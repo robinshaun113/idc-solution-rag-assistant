@@ -68,6 +68,15 @@ class HybridRetriever(BaseRetriever):
         return [doc_map[k] for k in sorted_keys]
 
 
+def _chinese_tokenize(text: str) -> list[str]:
+    """jieba 中文分词 + 空格分割（兼容英文/数字）。"""
+    try:
+        import jieba
+        return list(jieba.cut(text))
+    except ImportError:
+        return text.split()
+
+
 def create_hybrid_retriever(
     chunks: list[Document],
     vector_store,
@@ -88,7 +97,10 @@ def create_hybrid_retriever(
     # RRF 融合前两边各自多取一些：候选池越大，RRF 区分度越高
     fetch_k = max(top_k * 5, 20)
 
-    bm25 = BM25Retriever.from_documents(chunks)
+    bm25 = BM25Retriever.from_documents(
+        chunks,
+        preprocess_func=_chinese_tokenize,
+    )
     bm25.k = fetch_k
 
     vector = vector_store.as_retriever(search_kwargs={"k": fetch_k})
