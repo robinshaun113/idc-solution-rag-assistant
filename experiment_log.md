@@ -216,3 +216,52 @@
 
 **【工程产出】**
 - `experiments/exp04_query_rewrite.py`：Multi-Query + HyDE 实验脚本，四轨对比。
+
+---
+
+## exp05 · RAGAS 自动化评估（Day12, 2026/6/15）
+
+**目的**
+用 LLM 评估器自动打分，替代人工 1-5 分。四个指标覆盖检索+生成全链路。
+
+**实验设置**
+- 使用自实现 RAGAS 风格评分（ragas 0.4.3 与 langchain 1.x 不兼容）。
+- 四个指标：Context Precision / Context Recall / Faithfulness / Answer Relevancy。
+- 双配置：baseline (cs500/ov80, chroma_db 主库) vs current (cs300/ov50, Day8 最优)。
+- LLM 评分器：qwen-max，temperature=0。
+
+**结果**
+
+| 指标 | baseline(cs500) | current(cs300) | 变化 |
+|---|---|---|---|
+| Context Precision | 0.310 | 0.360 | +0.050 |
+| Context Recall | 0.724 | 0.760 | +0.036 |
+| Faithfulness | 1.000 | 1.000 | 0.000 |
+| Answer Relevancy | 0.720 | 0.712 | -0.008 |
+| 拒答数 | 8/25 | 7/25 | -1 |
+
+报告：`eval/ragas_report.md`。
+
+**关键发现**
+
+1. **Context Precision 仅 0.31-0.36**：检索的 4 个切片中，平均仅 ~1.3 个真的有用。hit@4=100%（source 级）掩盖了这一事实——翻对了书，但 3/4 的页是错的。gold_span 升级到 chunk 级后能精确量化。
+
+2. **Answer Relevancy 仅 0.71**：约 30% 的问题生成答案未回应用户需求——对应假性拒答题。cs300 拒答少了一道（8→7），但 AR 不变。
+
+3. **Faithfulness=1.0 是评估盲区**：拒答的 F=1.0 因为"不知道"忠于上下文——但对用户毫无帮助。F 必须配合 AR 一起看才有意义，单独盯着 F 会被骗。
+
+4. **cs300 小胜 cs500**：CP +0.05, CR +0.04, 少拒一道。检索侧改善微小但一致。核心瓶颈仍在生成侧（AR 0.71）。
+
+**下一步**：Day 13 生成层优化。
+
+---
+
+## gold_span · chunk 级黄金标注补充
+
+**完成日期**：2026/6/15
+
+25 道可答题全部补充 gold_span（答案原文片段）。评估集 v2：`eval/qa_set_v2_goldspan.jsonl`。
+
+用途：将评估从 source 级 hit@4 升级为 chunk 级——检查检索回来的切片是否包含 gold_span 文本。
+
+面试叙事线：评估尺子进化三阶段——①人工 1-5 分 → ②RAGAS 四指标 → ③chunk 级 gold_span 精确命中。持续校准评估体系 = 解决方案工程师的核心能力。
