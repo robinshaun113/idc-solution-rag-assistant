@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "src"))
 # ── FastAPI 核心概念 1: FastAPI() ──
 # app 是这个服务的"总开关"。后面所有的接口都挂在 app 上。
 from fastapi import FastAPI, HTTPException, UploadFile, File                 # noqa: E402
-from fastapi.responses import JSONResponse                                  # noqa: E402
+from fastapi.responses import JSONResponse, StreamingResponse                # noqa: E402
 
 # ── Pydantic 核心概念: BaseModel ──
 # 定义一个类，Pydantic 自动：
@@ -34,6 +34,8 @@ from pydantic import BaseModel, Field                                       # no
 
 # ── RAG 核心逻辑（你已有的模块）──
 from rag_chain import answer_question, DEFAULT_K                            # noqa: E402
+from generator import generate_stream                                        # noqa: E402
+from retriever import retrieve                                               # noqa: E402
 
 app = FastAPI(
     title="IDC 解决方案 RAG 助手",
@@ -119,7 +121,35 @@ def chat(req: ChatRequest):
 
 
 # ═══════════════════════════════════════════════════════════════
-# 接口 ③: 文件上传（扩展知识库）
+# 接口 ③: 流式问答（逐字返回答案）
+# ═══════════════════════════════════════════════════════════════
+
+@app.post("/chat/stream")
+def chat_stream(req: ChatRequest):
+    """POST /chat/stream → 流式 RAG 问答。
+
+    与 /chat 的唯一区别：答案不是一次性返回，而是边生成边发送。
+    格式是 SSE（Server-Sent Events）：每个 chunk 一行 `data: {token}`。
+    前端用 EventSource 或 fetch + ReadableStream 接收。
+    """
+    # 检索（非流式，先拿上下文）
+    docs = retrieve(req.question)
+
+    def _generate():
+        """生成器函数：逐个 yield SSE 格式的 token。"""
+        for token in generate_stream(req.question, docs):
+            # SSE 格式：data: <内容>\n\n
+            yield f"data: {token}\n\n"
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={"X-Accel-Buffering": "no"},  # 禁用 nginx 缓冲
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+# 接口 ④: 文件上传（扩展知识库）
 # ═══════════════════════════════════════════════════════════════
 
 @app.post("/upload")

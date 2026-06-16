@@ -54,8 +54,21 @@ def get_llm() -> ChatOpenAI:
 
 
 def generate(question: str, docs: list[Document]) -> str:
-    """根据问题和上下文切片生成答案。"""
+    """根据问题和上下文切片生成答案（一次性返回完整结果）。"""
     llm = get_llm()
     chain = _prompt | llm
     resp = chain.invoke({"context": _format_context(docs), "question": question})
     return resp.content
+
+
+def generate_stream(question: str, docs: list[Document]):
+    """流式生成：边生成边返回 token，适合 SSE（Server-Sent Events）。
+
+    LangChain ChatOpenAI 的 .stream() 方法返回一个迭代器，
+    每次 yield 一个包含 token 的 chunk。
+    """
+    llm = get_llm()
+    chain = _prompt | llm
+    for chunk in chain.stream({"context": _format_context(docs), "question": question}):
+        if chunk.content:
+            yield chunk.content
