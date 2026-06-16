@@ -119,3 +119,4 @@ fastapi
 uvicorn
 python-multipart
 httpx
+streamlit

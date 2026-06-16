@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma_db:/app/chroma_db   # 向量库持久化
+      - ./data:/app/data              # 语料持久化
+      - ./.env:/app/.env              # API Key
+    environment:
+      - PYTHONUTF8=1
+      - PYTHONIOENCODING=utf-8
+    restart: unless-stopped
