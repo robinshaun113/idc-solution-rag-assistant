@@ -120,3 +120,4 @@ uvicorn
 python-multipart
 httpx
 streamlit
+loguru

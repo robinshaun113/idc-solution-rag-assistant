@@ -14,15 +14,17 @@
 """
 
 import sys
+import time
 from pathlib import Path
 
-# 确保 src/ 下的模块可以被导入
+# 确保 src/ 和 app/ 下的模块可以被导入
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "app"))
 
 # ── FastAPI 核心概念 1: FastAPI() ──
 # app 是这个服务的"总开关"。后面所有的接口都挂在 app 上。
-from fastapi import FastAPI, HTTPException, UploadFile, File                 # noqa: E402
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request        # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse                # noqa: E402
 
 # ── Pydantic 核心概念: BaseModel ──
@@ -33,15 +35,21 @@ from fastapi.responses import JSONResponse, StreamingResponse                # n
 from pydantic import BaseModel, Field                                       # noqa: E402
 
 # ── RAG 核心逻辑（你已有的模块）──
-from rag_chain import answer_question, DEFAULT_K                            # noqa: E402
-from generator import generate_stream                                        # noqa: E402
+from rag_chain import RagResult                                             # noqa: E402
+from generator import generate, generate_stream                              # noqa: E402
 from retriever import retrieve                                               # noqa: E402
+
+# Day 19: 日志中间件
+from middleware import log_request_middleware                                 # noqa: E402
 
 app = FastAPI(
     title="IDC 解决方案 RAG 助手",
     description="面向 IDC 行业客户的 AI 解决方案知识库问答系统",
     version="1.0.0",
 )
+
+# Day 19: 注册日志中间件（每个请求自动记录 request_id + 耗时 + token 数）
+app.middleware("http")(log_request_middleware)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -87,33 +95,43 @@ def health():
 # ═══════════════════════════════════════════════════════════════
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    """POST /chat → RAG 问答。
+def chat(req: ChatRequest, request: Request):
+    """POST /chat -> RAG 问答。
 
     请求体 JSON：{"question": "机房温度过高怎么处理"}
     响应体 JSON：{"question": "...", "answer": "...", "sources": [...]}
 
-    ── FastAPI 核心概念 2: @app.post("/chat") ──
-    这个装饰器告诉 FastAPI：当有人向 /chat 发 POST 请求时，
-    执行这个函数。req 参数 FastAPI 自动从请求体 JSON 里解析、
-    用 Pydantic 校验。
-
-    ── FastAPI 核心概念 3: response_model ──
-    FastAPI 自动把函数返回值转成 JSON 响应。
-    Pydantic 检查返回格式是否符合 ChatResponse 定义。
+    Day 19 改动：分离检索/生成调用以便各自计时，
+    耗时 + token 数写入 request.state 供中间件统一记日志。
     """
+    request.state.question = req.question
+
     try:
-        result = answer_question(req.question)
+        # ── 检索计时 ──
+        t0 = time.perf_counter()
+        docs = retrieve(req.question)
+        request.state.retrieval_ms = (time.perf_counter() - t0) * 1000
+
+        # ── 生成计时 ──
+        t0 = time.perf_counter()
+        answer = generate(req.question, docs)
+        request.state.generation_ms = (time.perf_counter() - t0) * 1000
+
+        # ── Token 估算（tiktoken cl100k_base，兼容中英文）──
+        import tiktoken
+        enc = tiktoken.get_encoding("cl100k_base")
+        request.state.token_count = len(enc.encode(answer))
+
         sources = [
             {
                 "source": d.metadata.get("source", "unknown"),
                 "preview": d.page_content[:100].replace("\n", " "),
             }
-            for d in result.sources
+            for d in docs
         ]
         return ChatResponse(
-            question=result.question,
-            answer=result.answer,
+            question=req.question,
+            answer=answer,
             sources=sources,
         )
     except Exception as e:
@@ -125,26 +143,45 @@ def chat(req: ChatRequest):
 # ═══════════════════════════════════════════════════════════════
 
 @app.post("/chat/stream")
-def chat_stream(req: ChatRequest):
-    """POST /chat/stream → 流式 RAG 问答。
+def chat_stream(req: ChatRequest, request: Request):
+    """POST /chat/stream -> 流式 RAG 问答（SSE）。
 
-    与 /chat 的唯一区别：答案不是一次性返回，而是边生成边发送。
-    格式是 SSE（Server-Sent Events）：每个 chunk 一行 `data: {token}`。
-    前端用 EventSource 或 fetch + ReadableStream 接收。
+    Day 19 改动：检索计时记入 request.state；
+    流式生成完成后单独写一行日志（token 数在流结束后才确定）。
     """
-    # 检索（非流式，先拿上下文）
+    request.state.question = req.question
+
+    # ── 检索计时 ──
+    t0 = time.perf_counter()
     docs = retrieve(req.question)
+    request.state.retrieval_ms = (time.perf_counter() - t0) * 1000
+
+    import tiktoken
+    enc = tiktoken.get_encoding("cl100k_base")
 
     def _generate():
-        """生成器函数：逐个 yield SSE 格式的 token。"""
-        for token in generate_stream(req.question, docs):
-            # SSE 格式：data: <内容>\n\n
-            yield f"data: {token}\n\n"
+        """流式生成 + 完成后补记 token 日志。"""
+        gen_start = time.perf_counter()
+        all_tokens = []
+        try:
+            for token in generate_stream(req.question, docs):
+                all_tokens.append(token)
+                yield f"data: {token}\n\n"
+        finally:
+            from loguru import logger
+            gen_ms = (time.perf_counter() - gen_start) * 1000
+            token_count = len(enc.encode("".join(all_tokens)))
+            logger.bind(request_id=request.state.request_id).info(
+                f"POST /chat/stream | stream_done | "
+                f"retrieval={request.state.retrieval_ms:.0f}ms | "
+                f"generation={gen_ms:.0f}ms | "
+                f"tokens={token_count}"
+            )
 
     return StreamingResponse(
         _generate(),
         media_type="text/event-stream",
-        headers={"X-Accel-Buffering": "no"},  # 禁用 nginx 缓冲
+        headers={"X-Accel-Buffering": "no"},
     )
 
 

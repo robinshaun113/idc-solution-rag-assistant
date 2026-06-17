@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
-from config import DASHSCOPE_API_KEY, DASHSCOPE_BASE_URL, LLM_MODEL, assert_api_key
+from config import DASHSCOPE_API_KEY, DASHSCOPE_BASE_URL, LLM_MODEL, assert_api_key, get_http_client
 
 SYSTEM_PROMPT = """你是一名资深的 IDC 行业解决方案工程师。
 
@@ -50,6 +50,7 @@ def get_llm() -> ChatOpenAI:
         api_key=DASHSCOPE_API_KEY,
         base_url=DASHSCOPE_BASE_URL,
         temperature=0.2,  # 运维场景要稳，温度调低
+        http_client=get_http_client(),
     )
 
 
