@@ -1,18 +1,35 @@
-"""检索器：根据问题从向量库取回最相关的 k 个切片。
+"""Production retriever.
 
-V1 用最朴素的向量相似度检索。W2 会升级为混合检索 + Reranker（见 PLAN.md）。
+The default path intentionally remains direct dense retrieval: experiments showed
+that BM25, reranking and query rewriting did not improve the current small corpus.
+Those implementations remain under ``experiments/`` as reproducible comparisons.
 """
+from functools import lru_cache
+
 from langchain_core.documents import Document
 
+from evidence import backfill_legacy_evidence_metadata
 from vector_store import load_vector_store
 
 DEFAULT_K = 4
 
 
+@lru_cache(maxsize=1)
+def get_vector_store():
+    """Load Chroma once per process instead of rebuilding the client per request."""
+    return load_vector_store()
+
+
 def retrieve(query: str, k: int = DEFAULT_K) -> list[Document]:
     """返回与 query 最相关的 k 个切片。"""
-    store = load_vector_store()
-    return store.similarity_search(query, k=k)
+    store = get_vector_store()
+    docs = store.similarity_search(query, k=k)
+    # Old indexes may predate evidence metadata. Backfill it at read time so the
+    # API contract stays stable; rebuilding the index persists the same fields.
+    missing = [d for d in docs if not d.metadata.get("evidence_id")]
+    if missing:
+        backfill_legacy_evidence_metadata(missing)
+    return docs
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@
 """
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from evidence import attach_evidence_metadata
 
 # V1 默认参数，W2 会做网格实验找最优（见 PLAN.md Day 8）
 DEFAULT_CHUNK_SIZE = 500
@@ -27,7 +28,8 @@ def split_documents(
         # 中文友好的分隔符优先级：先按段落，再按换行、句号，最后才按字符
         separators=["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
     )
-    return splitter.split_documents(documents)
+    chunks = splitter.split_documents(documents)
+    return attach_evidence_metadata(chunks)
 
 
 if __name__ == "__main__":

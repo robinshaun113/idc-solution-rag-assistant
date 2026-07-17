@@ -38,6 +38,7 @@ from pydantic import BaseModel, Field                                       # no
 from rag_chain import RagResult                                             # noqa: E402
 from generator import generate, generate_stream                              # noqa: E402
 from retriever import retrieve                                               # noqa: E402
+from evidence import evidence_payload                                        # noqa: E402
 
 # Day 19: 日志中间件
 from middleware import log_request_middleware                                 # noqa: E402
@@ -73,7 +74,7 @@ class ChatResponse(BaseModel):
     """
     question: str
     answer: str
-    sources: list[dict]  # [{"source": "GB50174.pdf", "preview": "..."}, ...]
+    sources: list[dict]  # evidence_id/source/page/chunk_index/preview
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -122,13 +123,7 @@ def chat(req: ChatRequest, request: Request):
         enc = tiktoken.get_encoding("cl100k_base")
         request.state.token_count = len(enc.encode(answer))
 
-        sources = [
-            {
-                "source": d.metadata.get("source", "unknown"),
-                "preview": d.page_content[:100].replace("\n", " "),
-            }
-            for d in docs
-        ]
+        sources = [evidence_payload(d) for d in docs]
         return ChatResponse(
             question=req.question,
             answer=answer,
@@ -203,10 +198,19 @@ async def upload_knowledge(file: UploadFile = File(...)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="文件名不能为空")
 
-    # 保存到 data/raw/
-    dest = ROOT / "data" / "raw" / file.filename
-    content = await file.read()
+    safe_name = Path(file.filename).name
+    if safe_name != file.filename or safe_name in ("", ".", ".."):
+        raise HTTPException(status_code=400, detail="文件名不安全")
+
+    # Demo service limit: avoid unbounded memory use and oversized untrusted files.
+    max_bytes = 20 * 1024 * 1024
+    content = await file.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise HTTPException(status_code=413, detail="文件不能超过 20MB")
+
+    # 保存到 data/raw/；索引构建仍是显式离线步骤，避免请求线程长时间阻塞。
+    dest = ROOT / "data" / "raw" / safe_name
     dest.write_bytes(content)
 
-    return {"status": "ok", "filename": file.filename,
+    return {"status": "ok", "filename": safe_name,
             "size": len(content), "saved_to": str(dest.relative_to(ROOT))}
